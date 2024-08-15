@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const serverless = require('serverless-http');
-const { addAssistant, getAssistants, getUsers, addUser, loginUser } = require('./services');
+const { createTicket, updateTicket, getAssistants, getUsers, addUser, loginUser } = require('./services');
 const cors = require('cors');
 const logger = require('./logger');
 
@@ -42,13 +42,26 @@ app.get('/assistants', async (req, res) => {
 
 app.post('/tickets', async (req, res) => {
   try {
-    await addAssistant(req.body);
+    await createTicket(req.body);
     res.status(201).send("Assistant added successfully");
   } catch (error) {
-    logger.error("Error occurred while adding assistant", error);
-    res.status(500).send("Error occurred while adding assistant");
+    logger.error("Error occurred while adding ticket", error);
+    res.status(500).send("Error occurred while adding ticket");
   }
 });
+
+app.patch('/tickets/:qrCode', async (req, res) => {
+  try {
+    const { qrCode } = req.params;
+    const { scanned, usado } = req.body;
+    await updateTicket(qrCode, scanned, usado);
+    res.status(200).send("Ticket updated successfully");
+  } catch (error) {
+    logger.error("Error occurred while updating ticket", error);
+    res.status(500).send("Error occurred while updating ticket");
+  }
+}
+);
 
 app.get('/users', async (req, res) => {
   try {

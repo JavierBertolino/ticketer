@@ -21,30 +21,54 @@ async function getAssistants() {
   }
 }
 
-async function addAssistant(assistant) {
+async function createTicket(ticket) {
   try {
-    const emailData = await generateEmailData(assistant);
+    const emailData = await generateEmailData(ticket);
     const params = {
       TableName: "assistants",
       Item: {
-        nombre: assistant.nombre,
-        mail: assistant.mail,
-        cel: assistant.cel,
-        codigoEntrada: assistant.codigoEntrada,
-        fechaDeCompra: assistant.fechaDeCompra,
-        scanned: assistant.scanned,
-        usado: assistant.usado,
+        nombre: ticket.nombre,
+        mail: ticket.mail,
+        cel: ticket.cel,
+        codigoEntrada: ticket.codigoEntrada,
+        type: ticket.type,
+        fechaDeCompra: ticket.fechaDeCompra,
+        scanned: ticket.scanned,
+        usado: ticket.usado,
         qrCodeDataURL: emailData.qrCodeDataURL,
       },
     };
     logger.info("params", params)
     await docClient.put(params).promise();
     logger.info("Item added successfully");
-    await sendEmail(assistant.mail, emailData);
+    await sendEmail(ticket.mail, emailData);
     return { success: true };
   } catch (error) {
     console.error("Unable to add item. Error JSON:", JSON.stringify(error, null, 2));
     throw error
+  }
+}
+
+async function updateTicket(codigoEntrada, scanned, usado) {
+  try {
+    const params = {
+      TableName: "assistants",
+      Key: {
+        codigoEntrada,
+      },
+      UpdateExpression: "set scanned = :scanned, usado = :usado",
+      ExpressionAttributeValues: {
+        ":scanned": scanned,
+        ":usado": usado,
+      },
+      ReturnValues: "UPDATED_NEW",
+    };
+
+    await docClient.update(params).promise();
+    logger.info("Item updated successfully");
+  } catch (error) {
+    console.error("Unable to update item. Error JSON:", error);
+    throw error;
   }
 }
 
@@ -87,17 +111,15 @@ async function sendEmail(recipient, emailData) {
 }
 
 
-async function generateEmailData(assistant) {
-  const qrCodeDataURL = await QRCode.toDataURL(JSON.stringify(assistant));
+async function generateEmailData(ticket) {
+  const qrCodeDataURL = await QRCode.toDataURL(JSON.stringify(ticket));
 
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd;">
       <h2 style="color: #333;">Tu Entrada</h2>
-      <p><strong>Nombre:</strong> ${assistant.nombre}</p>
-      <p><strong>Email:</strong> ${assistant.mail}</p>
-      <p><strong>Celular:</strong> ${assistant.cel}</p>
-      <p><strong>Código Entrada:</strong> ${assistant.codigoEntrada}</p>
-      <p><strong>Fecha de Compra:</strong> ${assistant.fechaDeCompra}</p>
+      <p><strong>Nombre:</strong> ${ticket.nombre}</p>
+      <p><strong>Código Entrada:</strong> ${ticket.codigoEntrada}</p>
+      <p><strong>Fecha de Compra:</strong> ${ticket.fechaDeCompra}</p>
       <div style="margin-top: 20px; text-align: center;">
         <p style="margin-bottom: 10px;">Escanea el código QR debajo para usar tu entrada:</p>
         <img src="cid:qrcode@party" alt="QR Code" style="max-width: 200px;" />
@@ -115,7 +137,7 @@ async function generateEmailData(assistant) {
         Data: htmlContent,
       },
       Text: {
-        Data: `Tu entrada\n\nNombre: ${assistant.nombre}\nEmail: ${assistant.mail}\nCel: ${assistant.cel}\nCodigo Entrada: ${assistant.codigoEntrada}\nFecha de Compra: ${assistant.fechaDeCompra}\Escanea el código QR debajo para usar tu entrada.`,
+        Data: `Tu entrada\n\nNombre: ${ticket.nombre}\nCodigo Entrada: ${ticket.codigoEntrada}\nFecha de Compra: ${ticket.fechaDeCompra}\Escanea el código QR debajo para usar tu entrada.`,
       },
     },
     qrCodeDataURL,  // Pass the QR code data URL for the attachment
@@ -197,4 +219,4 @@ function decodePassword(encryptedPassword) {
   return decrypted;
 }
 
-module.exports = { getAssistants, addAssistant, getUsers, addUser, loginUser };
+module.exports = { getAssistants, createTicket, getUsers, addUser, loginUser, updateTicket };

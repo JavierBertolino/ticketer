@@ -8,7 +8,7 @@ const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const token = Cookies.get('auth_token');
+    const token = Cookies.get('token');
     if (token) {
       setIsAuthenticated(true);
     }

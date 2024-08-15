@@ -12,7 +12,7 @@ const { Column } = Table;
 const Home: React.FC = () => {
   const [asistentes, setAsistentes] = useState<Ticket[]>([]);
   const webcamRef = useRef<Webcam>(null);
-  const scannerRef = useRef<QrScanner | null>(null); // Use ref instead of state for the scanner
+  const scannerRef = useRef<QrScanner | null>(null);
   const [isScannerVisible, setScannerVisible] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [scanResult, setScanResult] = useState<"success" | "error" | "warning" | null>(null);
@@ -171,8 +171,8 @@ const Home: React.FC = () => {
   );
 
   return (
-    <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: "center" }}>
-      <h1>Tickets Manager</h1>
+    <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', alignItems: 'left', justifyContent: "flex-start", height: '100vh' }}>
+      <h1 style={{ fontSize: '1.5rem', textAlign: 'left', marginBottom: '20px' }}>Tickets Manager</h1>
 
       {scanResult && (
         <div style={{
@@ -181,46 +181,53 @@ const Home: React.FC = () => {
           left: '50%',
           transform: 'translate(-50%, -50%)',
           zIndex: 2000,
-          width: '300px',
+          width: '80%',
+          maxWidth: '300px',
           background: 'white',
           padding: '20px',
           boxShadow: '0 0 10px rgba(0, 0, 0, 0.5)',
-          textAlign: 'center'
+          textAlign: 'center',
+          borderRadius: '8px'
         }}>
           <Result
             status={scanResult}
             title={scanResult === "success" ? "Entrada valida!" : "Entrada invalida"}
             extra={[
               <Button key="close" onClick={() => setScanResult(null)}>Cerrar</Button>,
+              <Button key="rescan" onClick={startScan}>Volver a Escanear</Button>,
             ]}
           />
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px', flexWrap: 'wrap' }}>
-        <Button type="primary" onClick={() => setIsModalVisible(true)} style={{ margin: '5px', width: "100px", height: "100px", textWrap: "wrap" }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '20px', flexWrap: 'wrap' }}>
+        <Button type="primary" onClick={() => setIsModalVisible(true)} style={{ margin: '5px', fontSize: '1rem', width: '120px', height: '60px', textWrap: "wrap" }}>
           Crear Ticket
         </Button>
-        <Button type="primary" onClick={startScan} style={{ margin: '5px', width: "100px", height: "100px", textWrap: "wrap" }}>
+        <Button type="primary" onClick={startScan} style={{ margin: '5px', fontSize: '1rem', width: '120px', height: '60px', textWrap: "wrap" }}>
           Escanear Código QR
         </Button>
       </div>
 
-      <Table dataSource={asistentes} rowKey="id" style={{ width: '100%', maxWidth: '800px' }}>
-        <Column title="Nombre" dataIndex="nombre" key="nombre" />
-        <Column title="Codigo Entrada" dataIndex="codigoEntrada" key="codigoEntrada" />
-        <Column title="Usado" dataIndex="usado" key="usado" render={(_, record: Ticket) => (record.usado ? 'Si' : 'No')} />
-        <Column title="Tipo" dataIndex="type" key="type" />
-        <Column title="Mail" dataIndex="mail" key="mail" />
-        <Column title="Cel" dataIndex="cel" key="cel" />
-        <Column title="Fecha de Compra" dataIndex="fechaDeCompra" key="fechaDeCompra" />
-      </Table>
+      <div style={{ width: '100%', maxWidth: '800px', overflow: 'auto' }}>
+        <Table dataSource={asistentes} rowKey="codigoEntrada" style={{ width: '100%' }}>
+          <Column title="Nombre" dataIndex="nombre" key="nombre" />
+          <Column title="Codigo Entrada" dataIndex="codigoEntrada" key="codigoEntrada" />
+          <Column title="Usado" dataIndex="usado" key="usado" render={(_, record: Ticket) => (record.usado ? 'Si' : 'No')} />
+          <Column title="Tipo" dataIndex="type" key="type" />
+          <Column title="Mail" dataIndex="mail" key="mail" />
+          <Column title="Cel" dataIndex="cel" key="cel" />
+          <Column title="Fecha de Compra" dataIndex="fechaDeCompra" key="fechaDeCompra" />
+        </Table>
+      </div>
 
       <Modal
         title="Agregar Ticket"
         open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
         onOk={() => form.submit()}
+        style={{ top: 20, left: 0 }}
+        styles={{ body: { paddingLeft: '20px', paddingRight: '20px' } }}
       >
         <Form
           form={form}
@@ -250,14 +257,16 @@ const Home: React.FC = () => {
           <Form.Item
             label="Tipo"
             name="type"
+            initialValue={"General"}
           >
-            <Select defaultValue="General">
+            <Select >
               <Select.Option value="General">General</Select.Option>
               <Select.Option value="FreeMujeres">Free Mujeres</Select.Option>
             </Select>
           </Form.Item>
         </Form>
       </Modal>
+
 
       {isScannerVisible && (
         <FullScreenQRCodeScanner

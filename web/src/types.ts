@@ -7,6 +7,7 @@ export type Ticket = {
   fechaDeCompra: string
   usado: boolean
   escaneado: string
+  type: string
 }
 
 export default Ticket

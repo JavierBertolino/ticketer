@@ -10,3 +10,9 @@ if %ERRORLEVEL% neq 0 (
     echo S3 sync failed.
     exit /b %ERRORLEVEL%
 )
+
+aws cloudfront create-invalidation --distribution-id E2EW8ECXU3IXL7 --paths "/*"
+if %ERRORLEVEL% neq 0 (
+    echo CloudFront invalidation failed.
+    exit /b %ERRORLEVEL%
+)

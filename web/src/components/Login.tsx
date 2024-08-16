@@ -26,11 +26,9 @@ const Login: React.FC<LoginProps> = ({ setIsAuthenticated }) => {
       message.success('Login successful');
       setIsAuthenticated(true);
 
-      // Calculate the expiration date (3 hours from now)
       const expirationDate = new Date();
       expirationDate.setTime(expirationDate.getTime() + (3 * 60 * 60 * 1000)); // 3 hours in milliseconds
 
-      // Store the token in a cookie with a 3-hour expiration
       document.cookie = `token=${response.token}; path=/; expires=${expirationDate.toUTCString()}`;
 
       navigate('/home');
@@ -45,20 +43,20 @@ const Login: React.FC<LoginProps> = ({ setIsAuthenticated }) => {
       justifyContent: 'center',
       alignItems: 'center',
       height: '100vh',
-      padding: '10px', // Added padding to make the container adjust better on small screens
-      backgroundColor: '#f0f2f5' // Optional: to make it look better
+      padding: '10px',
+      backgroundColor: '#f0f2f5'
     }}>
       <Form
         form={form}
         layout="vertical"
         style={{
           width: '100%',
-          // maxWidth: '430px', // Increased width for better usability on tablets
+          maxWidth: '375px', // Adjusted for mobile screens
           padding: '20px',
           border: '1px solid #ddd',
           borderRadius: '8px',
-          backgroundColor: '#fff', // Optional: better form appearance
-          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' // Optional: subtle shadow
+          backgroundColor: '#fff',
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
         }}
         onFinish={handleLogin}
       >

@@ -17,7 +17,6 @@ const allowedOrigins = [
 app.use(express.json());
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
@@ -89,7 +88,6 @@ app.post('/login', async (req, res) => {
     const loginResult = await loginUser(usuario, password);
 
     if (loginResult.status === "OK") {
-      // Return the token in the response body instead of setting a cookie
       res.status(200).json({ message: "Login successful", token: loginResult.token });
     } else {
       res.status(401).send("Unauthorized");
@@ -101,7 +99,6 @@ app.post('/login', async (req, res) => {
 });
 
 
-// Check if running locally or on AWS Lambda
 if (process.env.LOCAL_ENV === 'true') {
   app.listen(PORT, (error) => {
     if (!error) {

@@ -36,7 +36,7 @@ const Home: React.FC = () => {
         }
       );
       console.log("setting scanner", qrScanner);
-      scannerRef.current = qrScanner; // Assign the scanner to the ref
+      scannerRef.current = qrScanner;
 
       qrScanner.start()
         .then(() => {
@@ -59,7 +59,7 @@ const Home: React.FC = () => {
       try {
         scannerRef.current.stop();
         console.log("scanner stopped");
-        scannerRef.current = null; // Reset the ref
+        scannerRef.current = null;
         setScannerVisible(false);
       } catch (err: any) {
         console.error('Error stopping scanner', err);
@@ -98,7 +98,6 @@ const Home: React.FC = () => {
     console.log("assistant", assistant);
     if (assistant) {
       if (!assistant.usado) {
-        // here check if the current time is after 1:30AM
         if (assistant.type === "FreeMujeres" && dayjs().isAfter(dayjs().hour(1).minute(30))) {
           setScanResult("warning");
           return;
@@ -115,12 +114,8 @@ const Home: React.FC = () => {
     } else {
       setScanResult("error");
     }
-    stopScan();  // Stop the scanner after processing the result
-
-    // Stop the scanner after processing the result
     stopScan();
 
-    // Automatically hide the result after 10 seconds
     setTimeout(() => {
       setScanResult(null);
     }, 10000);

@@ -77,26 +77,25 @@ async function sendEmail(recipient, emailData) {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.EMAIL_ADDRESS,  // Replace with your Gmail address
-        pass: process.env.EMAIL_PASSWORD, // Replace with your app-specific password
+        user: process.env.EMAIL_ADDRESS,
+        pass: process.env.EMAIL_PASSWORD,
       },
     });
 
-    // Extract base64 content safely
     const base64Data = emailData.qrCodeDataURL.replace(/^data:image\/png;base64,/, "");
 
     const mailOptions = {
-      from: process.env.EMAIL_ADDRESS, // Sender address
-      to: recipient, // List of recipients
-      subject: emailData.Subject.Data, // Subject line
-      text: emailData.Body.Text.Data, // Plain text body
-      html: emailData.Body.Html.Data, // HTML body
+      from: process.env.EMAIL_ADDRESS,
+      to: recipient,
+      subject: emailData.Subject.Data,
+      text: emailData.Body.Text.Data,
+      html: emailData.Body.Html.Data,
       attachments: [
         {
           filename: 'qrcode.png',
           content: base64Data,
           encoding: 'base64',
-          cid: 'qrcode@party', // Content ID to embed the image in the email
+          cid: 'qrcode@party',
         },
       ],
     };
@@ -140,7 +139,7 @@ async function generateEmailData(ticket) {
         Data: `Tu entrada\n\nNombre: ${ticket.nombre}\nCodigo Entrada: ${ticket.codigoEntrada}\nFecha de Compra: ${ticket.fechaDeCompra}\Escanea el código QR debajo para usar tu entrada.`,
       },
     },
-    qrCodeDataURL,  // Pass the QR code data URL for the attachment
+    qrCodeDataURL,
   };
 }
 
@@ -154,7 +153,6 @@ async function getUsers() {
 }
 
 async function addUser(user) {
-  // generate and id for the user
   user.id = crypto.randomBytes(8).toString("hex");
   try {
     const params = {
@@ -185,11 +183,10 @@ async function loginUser(usuario, password) {
     const result = await docClient.scan(params).promise();
 
     if (result.Items.length > 0) {
-      const user = result.Items[0]; // Assuming 'nombre' is unique and you only get one result
+      const user = result.Items[0];
       const decryptedPassword = decodePassword(user.password);
 
       if (decryptedPassword === password) {
-        // Create JWT token
         const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '8h' });
         return { status: "OK", token };
       } else {

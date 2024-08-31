@@ -49,12 +49,12 @@ async function createTicket(ticket) {
   }
 }
 
-async function updateTicket(codigoEntrada, scanned, usado) {
+async function patchTicket(id, scanned, usado) {
   try {
     const params = {
       TableName: "assistants",
       Key: {
-        codigoEntrada,
+        id,
       },
       UpdateExpression: "set scanned = :scanned, usado = :usado",
       ExpressionAttributeValues: {
@@ -92,6 +92,11 @@ async function sendEmail(recipient, emailData) {
       html: emailData.Body.Html.Data,
       attachments: [
         {
+          filename: 'flyer.jpg', // Adjust the filename if needed
+          path: './flyer.jpg', // Path to the flyer image file
+          cid: 'flyer@party', // Same cid value as in the HTML content
+        },
+        {
           filename: 'qrcode.png',
           content: base64Data,
           encoding: 'base64',
@@ -105,18 +110,22 @@ async function sendEmail(recipient, emailData) {
     logger.info("Email sent successfully");
   } catch (error) {
     console.error("Error sending email: ", error);
-    throw error
+    throw error;
   }
 }
-
 
 async function generateEmailData(ticket) {
   const qrCodeDataURL = await QRCode.toDataURL(JSON.stringify(ticket));
 
   const htmlContent = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd;">
-      <h2 style="color: #333;">Tu Entrada</h2>
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; text-align: center;">
+      <!-- Center the flyer image and make it larger -->
+      <img src="cid:flyer@party" alt="Flyer" style="display: block; margin: 0 auto; max-width: 100%; height: auto; user-select: none;" />
+      
+      <h2 style="color: #333; margin-top: 20px;">Tu Entrada</h2>
       <p><strong>Nombre:</strong> ${ticket.nombre}</p>
+      <p><strong>Email:</strong> ${ticket.mail}</p>
+      <p><strong>Celular:</strong> ${ticket.cel}</p>
       <p><strong>Código Entrada:</strong> ${ticket.codigoEntrada}</p>
       <p><strong>Fecha de Compra:</strong> ${ticket.fechaDeCompra}</p>
       <div style="margin-top: 20px; text-align: center;">
@@ -136,7 +145,7 @@ async function generateEmailData(ticket) {
         Data: htmlContent,
       },
       Text: {
-        Data: `Tu entrada\n\nNombre: ${ticket.nombre}\nCodigo Entrada: ${ticket.codigoEntrada}\nFecha de Compra: ${ticket.fechaDeCompra}\Escanea el código QR debajo para usar tu entrada.`,
+        Data: `Tu entrada\n\nNombre: ${ticket.nombre}\nCodigo Entrada: ${ticket.codigoEntrada}\nFecha de Compra: ${ticket.fechaDeCompra}\nEscanea el código QR debajo para usar tu entrada.`,
       },
     },
     qrCodeDataURL,
@@ -201,19 +210,18 @@ async function loginUser(usuario, password) {
   }
 }
 
-
 function encodePassword(password) {
-  const cipher = crypto.createCipher('aes-256-cbc', process.env.PWD_HASH);
+  const cipher = crypto.createDecipheriv('aes-256-cbc', process.env.PWD_HASH);
   let encrypted = cipher.update(password, 'utf8', 'hex');
   encrypted += cipher.final('hex');
   return encrypted;
 }
 
 function decodePassword(encryptedPassword) {
-  const decipher = crypto.createDecipher('aes-256-cbc', process.env.PWD_HASH);
+  const decipher = crypto.createDecipheriv('aes-256-cbc', process.env.PWD_HASH);
   let decrypted = decipher.update(encryptedPassword, 'hex', 'utf8');
   decrypted += decipher.final('utf8');
   return decrypted;
 }
 
-module.exports = { getAssistants, createTicket, getUsers, addUser, loginUser, updateTicket };
+module.exports = { getAssistants, createTicket, getUsers, addUser, loginUser, updateTicket: patchTicket };

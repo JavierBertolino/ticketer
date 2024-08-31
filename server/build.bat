@@ -3,7 +3,6 @@
 REM Set your variables
 set LAMBDA_FUNCTION_NAME=ticketer
 set ZIP_FILE=lambda_code.zip
-set AWS_PROFILE=berto
 
 
 REM Remove any existing zip file
@@ -21,13 +20,13 @@ if not exist %ZIP_FILE% (
 
 @REM REM Upload the zip file to AWS Lambda
 @REM echo Uploading zip file to AWS Lambda...
-@REM aws lambda update-function-code --function-name %LAMBDA_FUNCTION_NAME% --zip-file fileb://%ZIP_FILE%
+aws lambda update-function-code --function-name ticketer --zip-file fileb://lambda_code.zip
 
-@REM REM Check if the upload was successful
-@REM if %ERRORLEVEL% neq 0 (
-@REM     echo Failed to upload to AWS Lambda.
-@REM     exit /b 1
-@REM )
+REM Check if the upload was successful
+if %ERRORLEVEL% neq 0 (
+    echo Failed to upload to AWS Lambda.
+    exit /b 1
+)
 
-@REM echo Lambda function updated successfully.
-@REM exit /b 0
+echo Lambda function updated successfully.
+exit /b 0

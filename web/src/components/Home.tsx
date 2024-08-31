@@ -4,24 +4,24 @@ import QrScanner from 'qr-scanner';
 import Webcam from 'react-webcam';
 import { v4 as uuidv4 } from 'uuid';
 import dayjs from 'dayjs';
-import { getAssistants, addTicket } from '../api';
+import { getAssistants, addTicket, patchTicket } from '../api';
 import { Ticket } from '../types';
 
 const { Column } = Table;
 
 const Home: React.FC = () => {
-  const [asistentes, setAsistentes] = useState<Ticket[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const webcamRef = useRef<Webcam>(null);
   const scannerRef = useRef<QrScanner | null>(null);
   const [isScannerVisible, setScannerVisible] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [scanResult, setScanResult] = useState<"success" | "error" | "warning" | null>(null);
+  const [scanResult, setScanResult] = useState<"success" | "error" | "vencida" | "usada" | null>(null);
   const [form] = Form.useForm();
 
   useEffect(() => {
     const fetchAssistants = async () => {
       const assistants = await getAssistants();
-      setAsistentes(assistants);
+      setTickets(assistants);
     };
     fetchAssistants();
   }, []);
@@ -51,6 +51,11 @@ const Home: React.FC = () => {
   const startScan = () => {
     setScannerVisible(true);
   };
+
+  const restartScan = () => {
+    stopScan();
+    startScan();
+  }
 
   const stopScan = () => {
     console.log("about to stop it", scannerRef.current);
@@ -84,32 +89,35 @@ const Home: React.FC = () => {
       escaneado: ''
     };
 
-    setAsistentes([...asistentes, newTicket]);
+    setTickets([...tickets, newTicket]);
     form.resetFields();
     setIsModalVisible(false);
     await addTicket(newTicket);
   };
 
-  const handleScan = (result: QrScanner.ScanResult) => {
+  const handleScan = async (result: QrScanner.ScanResult) => {
     console.log('Scan result:', result);
     const scannedData = JSON.parse(result.data);
-    const assistant = asistentes.find((p) => p.codigoEntrada === scannedData.codigoEntrada);
+    const ticket = tickets.find((p) => p.codigoEntrada === scannedData.codigoEntrada);
 
-    console.log("assistant", assistant);
-    if (assistant) {
-      if (!assistant.usado) {
-        if (assistant.type === "FreeMujeres" && dayjs().isAfter(dayjs().hour(1).minute(30))) {
-          setScanResult("warning");
+    console.log("assistant", ticket);
+    if (ticket) {
+      if (!ticket.usado) {
+        if (ticket.type === "FreeMujeres" && dayjs().isAfter(dayjs().hour(1).minute(30))) {
+          setScanResult("vencida");
           return;
         }
-        setAsistentes(
-          asistentes.map((p) =>
-            p.codigoEntrada === scannedData.codigoEntrada ? { ...p, usado: true, escaneado: dayjs().format('DD-MM-YYYY HH:mm:ss') } : p
+
+        const currentTime = dayjs().format('DD-MM-YYYY HH:mm:ss')
+        await patchTicket({ ...ticket, usado: true, escaneado: currentTime });
+        setTickets(
+          tickets.map((p) =>
+            p.codigoEntrada === scannedData.codigoEntrada ? { ...p, usado: true, escaneado: currentTime } : p
           )
         );
         setScanResult("success");
       } else {
-        setScanResult("error");
+        setScanResult("usada");
       }
     } else {
       setScanResult("error");
@@ -165,6 +173,27 @@ const Home: React.FC = () => {
     </div>
   );
 
+  const getResultMessage = (scanResult: string) => {
+    const resultsMap: { [key: string]: string } = {
+      success: "Entrada valida!",
+      error: "Entrada invalida",
+      venncida: "Entrada expirada",
+      usada: "Entrada ya utilizada"
+    };
+
+    return resultsMap[scanResult];
+  }
+
+  const getResultStatus = (scanResult: string) => {
+    const statusMap: { [key: string]: "success" | "error" | "warning" } = {
+      success: "success",
+      error: "error",
+      vencida: "warning",
+      usada: "warning"
+    };
+    return statusMap[scanResult];
+  }
+
   return (
     <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', alignItems: 'left', justifyContent: "flex-start", height: '100vh' }}>
       <h1 style={{ fontSize: '1.5rem', textAlign: 'left', marginBottom: '20px' }}>Tickets Manager</h1>
@@ -185,11 +214,11 @@ const Home: React.FC = () => {
           borderRadius: '8px'
         }}>
           <Result
-            status={scanResult}
-            title={scanResult === "success" ? "Entrada valida!" : "Entrada invalida"}
+            status={getResultStatus(scanResult)}
+            title={getResultMessage(scanResult)}
             extra={[
               <Button key="close" onClick={() => setScanResult(null)}>Cerrar</Button>,
-              <Button key="rescan" onClick={startScan}>Volver a Escanear</Button>,
+              <Button key="rescan" onClick={restartScan}>Volver a Escanear</Button>,
             ]}
           />
         </div>
@@ -203,9 +232,10 @@ const Home: React.FC = () => {
           Escanear Código QR
         </Button>
       </div>
-
+      <h3 style={{ fontSize: '1.2rem', textAlign: 'left', marginBottom: '20px' }}>Tickets: {tickets.length}</h3>
+      <h3 style={{ fontSize: '1.2rem', textAlign: 'left', marginBottom: '20px' }}>Tickets Escaneados: {tickets.filter(t => t.usado).length}</h3>
       <div style={{ width: '100%', maxWidth: '800px', overflow: 'auto' }}>
-        <Table dataSource={asistentes} rowKey="codigoEntrada" style={{ width: '100%' }}>
+        <Table dataSource={tickets} rowKey="codigoEntrada" style={{ width: '100%' }}>
           <Column title="Nombre" dataIndex="nombre" key="nombre" />
           <Column title="Codigo Entrada" dataIndex="codigoEntrada" key="codigoEntrada" />
           <Column title="Usado" dataIndex="usado" key="usado" render={(_, record: Ticket) => (record.usado ? 'Si' : 'No')} />

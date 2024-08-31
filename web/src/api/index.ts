@@ -34,6 +34,22 @@ const addTicket = async (ticketData: Ticket) => {
   }
 };
 
+const patchTicket = async (ticketData: Ticket) => {
+  try {
+    const { codigoEntrada, escaneado, usado } = ticketData;
+    const response = await axios.patch(`${API_URL}/tickets/${codigoEntrada}`, { scanned: escaneado, usado }, {
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": import.meta.env.VITE_API_KEY
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error patching ticket:', error);
+    throw error;
+  }
+}
+
 const loginUser = async (usuario: string, password: string) => {
   console.log("Logging in with API key", import.meta.env.VITE_API_KEY);
   try {
@@ -55,4 +71,4 @@ const loginUser = async (usuario: string, password: string) => {
 };
 
 
-export { getAssistants, addTicket, loginUser };
+export { getAssistants, addTicket, loginUser, patchTicket };

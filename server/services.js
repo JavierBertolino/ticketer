@@ -16,7 +16,7 @@ async function getAssistants() {
     const result = await docClient.scan(params).promise();
     return result.Items;
   } catch (error) {
-    console.error("Unable to get items. Error JSON:", error);
+    logger.error("Unable to get items. Error JSON:", error);
     throw error;
   }
 }
@@ -38,23 +38,23 @@ async function createTicket(ticket) {
         qrCodeDataURL: emailData.qrCodeDataURL,
       },
     };
-    logger.info("params", params)
+    logger.info("Create params", params)
     await docClient.put(params).promise();
     logger.info("Item added successfully");
     await sendEmail(ticket.mail, emailData);
     return { success: true };
   } catch (error) {
-    console.error("Unable to add item. Error JSON:", JSON.stringify(error, null, 2));
+    logger.error("Unable to add item. Error JSON:", JSON.stringify(error, null, 2));
     throw error
   }
 }
 
-async function patchTicket(id, scanned, usado) {
+async function patchTicket(codigoEntrada, scanned, usado) {
   try {
     const params = {
       TableName: "assistants",
       Key: {
-        id,
+        codigoEntrada,
       },
       UpdateExpression: "set scanned = :scanned, usado = :usado",
       ExpressionAttributeValues: {
@@ -64,10 +64,11 @@ async function patchTicket(id, scanned, usado) {
       ReturnValues: "UPDATED_NEW",
     };
 
+    logger.info(`Updating ${codigoEntrada} with scanned: ${scanned} and usado: ${usado}`);
     await docClient.update(params).promise();
     logger.info("Item updated successfully");
   } catch (error) {
-    console.error("Unable to update item. Error JSON:", error);
+    logger.error("Unable to update item. Error JSON:", error);
     throw error;
   }
 }
@@ -109,7 +110,7 @@ async function sendEmail(recipient, emailData) {
     await transporter.sendMail(mailOptions);
     logger.info("Email sent successfully");
   } catch (error) {
-    console.error("Error sending email: ", error);
+    logger.error("Error sending email: ", error);
     throw error;
   }
 }
@@ -174,7 +175,7 @@ async function addUser(user) {
     };
     await docClient.put(params).promise();
   } catch (error) {
-    console.error("Unable to add item. Error JSON:", JSON.stringify(error, null, 2));
+    logger.error("Unable to add item. Error JSON:", JSON.stringify(error, null, 2));
     throw error;
   }
 }
@@ -205,20 +206,20 @@ async function loginUser(usuario, password) {
       return { status: "Unauthorized" };
     }
   } catch (error) {
-    console.error("Error logging in:", error);
+    logger.error("Error logging in:", error);
     throw error;
   }
 }
 
 function encodePassword(password) {
-  const cipher = crypto.createDecipheriv('aes-256-cbc', process.env.PWD_HASH);
+  const cipher = crypto.createCipher('aes-256-cbc', process.env.PWD_HASH);
   let encrypted = cipher.update(password, 'utf8', 'hex');
   encrypted += cipher.final('hex');
   return encrypted;
 }
 
 function decodePassword(encryptedPassword) {
-  const decipher = crypto.createDecipheriv('aes-256-cbc', process.env.PWD_HASH);
+  const decipher = crypto.createDecipher('aes-256-cbc', process.env.PWD_HASH);
   let decrypted = decipher.update(encryptedPassword, 'hex', 'utf8');
   decrypted += decipher.final('utf8');
   return decrypted;

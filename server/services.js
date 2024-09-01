@@ -117,6 +117,7 @@ async function sendEmail(recipient, emailData) {
 
 async function generateEmailData(ticket) {
   const qrCodeDataURL = await QRCode.toDataURL(JSON.stringify(ticket));
+  const ticketType = ticket.type === "FreeMujeres" ? "Free Mujeres" : "General";
 
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; text-align: center;">
@@ -127,6 +128,7 @@ async function generateEmailData(ticket) {
       <p><strong>Nombre:</strong> ${ticket.nombre}</p>
       <p><strong>Email:</strong> ${ticket.mail}</p>
       <p><strong>Celular:</strong> ${ticket.cel}</p>
+      <p><strong>Tipo de entrada:</strong> ${ticketType}</p>
       <p><strong>Código Entrada:</strong> ${ticket.codigoEntrada}</p>
       <p><strong>Fecha de Compra:</strong> ${ticket.fechaDeCompra}</p>
       <div style="margin-top: 20px; text-align: center;">

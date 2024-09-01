@@ -27,6 +27,7 @@ const Home: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    console.log("SCANNER IS VISIBLE CHANGED", isScannerVisible);
     if (isScannerVisible && webcamRef.current?.video) {
       const qrScanner = new QrScanner(
         webcamRef.current.video,
@@ -53,8 +54,10 @@ const Home: React.FC = () => {
   };
 
   const restartScan = () => {
-    stopScan();
-    startScan();
+    setScanResult(null);
+    setTimeout(() => {
+      setScannerVisible(true); // Show the scanner to re-trigger the useEffect
+    }, 100);
   }
 
   const stopScan = () => {
@@ -95,6 +98,14 @@ const Home: React.FC = () => {
     await addTicket(newTicket);
   };
 
+  // const isPast1AM30 = () => {
+  //   return dayjs().isAfter(dayjs().hour(1).minute(30));
+  // }
+
+  const isPast1pm30 = () => {
+    return dayjs().isAfter(dayjs().hour(13).minute(30));
+  }
+
   const handleScan = async (result: QrScanner.ScanResult) => {
     console.log('Scan result:', result);
     const scannedData = JSON.parse(result.data);
@@ -103,9 +114,12 @@ const Home: React.FC = () => {
     console.log("assistant", ticket);
     if (ticket) {
       if (!ticket.usado) {
-        if (ticket.type === "FreeMujeres" && dayjs().isAfter(dayjs().hour(1).minute(30))) {
+        console.log("TIME", dayjs().format('DD-MM-YYYY HH:mm:ss'));
+        console.log("isPast1pm30", isPast1pm30());
+        if (ticket.type === "FreeMujeres" && isPast1pm30()) {
           setScanResult("vencida");
-          return;
+        } else {
+          setScanResult("success");
         }
 
         const currentTime = dayjs().format('DD-MM-YYYY HH:mm:ss')
@@ -115,7 +129,6 @@ const Home: React.FC = () => {
             p.codigoEntrada === scannedData.codigoEntrada ? { ...p, usado: true, escaneado: currentTime } : p
           )
         );
-        setScanResult("success");
       } else {
         setScanResult("usada");
       }
@@ -125,7 +138,9 @@ const Home: React.FC = () => {
     stopScan();
 
     setTimeout(() => {
-      setScanResult(null);
+      if (scanResult) {
+        setScanResult(null);
+      }
     }, 10000);
   };
 
@@ -177,7 +192,7 @@ const Home: React.FC = () => {
     const resultsMap: { [key: string]: string } = {
       success: "Entrada valida!",
       error: "Entrada invalida",
-      venncida: "Entrada expirada",
+      vencida: "Entrada expirada",
       usada: "Entrada ya utilizada"
     };
 
@@ -218,7 +233,7 @@ const Home: React.FC = () => {
             title={getResultMessage(scanResult)}
             extra={[
               <Button key="close" onClick={() => setScanResult(null)}>Cerrar</Button>,
-              <Button key="rescan" onClick={restartScan}>Volver a Escanear</Button>,
+              <Button key="rescan" onClick={() => restartScan()}>Volver a Escanear</Button>,
             ]}
           />
         </div>
